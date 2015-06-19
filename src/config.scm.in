@@ -1,0 +1,28 @@
+;; Copyright 2014,2015 - William Emerison Six
+;;  All rights reserved
+;;  Distributed under LGPL 2.1 or Apache 2.0
+
+{namespace ("hgp-configuration#"
+	    package
+	    version
+	    prefix
+	    )}
+
+{define package  "@PACKAGE_NAME@"}
+{define version  "@PACKAGE_VERSION@"}
+{define prefix "@prefix@"}
+{define ac_unique_file "@ac_unique_file@"}
+
+(namespace ("hgp#"))
+(##include "~~lib/gambit#.scm")
+
+{define libbug_shared_libs "@LIBBUG_LIB_DIR@"}
+
+(##include "@LIBBUG_INCLUDE_DIR@libbug-macros.scm")
+(##include "@LIBBUG_INCLUDE_DIR@libbug#.scm")
+{at-compile-time
+ {begin
+   (load "@LIBBUG_LOADABLE_LIBS@")
+   (##include "@LIBBUG_INCLUDE_DIR@libbug-macros.scm")
+   (##include "@LIBBUG_INCLUDE_DIR@libbug#.scm")}}
+

@@ -11,10 +11,10 @@ libdir=@libdir@
 includedir=@includedir@
 datarootdir = @datarootdir@
 
-all: libbug.so
+all: hgp
 
 %.scm : %.bug.scm
-	../bug-gsc/bug-gscpp $< $@
+	bug-gscpp $< $@
 
 %.c : %.scm
 	gsc -c $<
@@ -22,37 +22,20 @@ all: libbug.so
 %.o : %.c
 	gsc -obj $<
 
-libbug.so: main.c
-	#build the shared library
-	gsc -link -o libbug.c main
-	gsc -obj -cc-options "-D___SHARED" libbug.c main.c
-	$(CC) -shared  libbug.o main.o -o libbug.so.$(version)
-	# for reasons I don't yet understand, leaving main.[co] around causes
-	# problems in subsequent makes
-	rm main.c main.o
-	#build the loadable library
-	gsc -link -flat -o libbug.$(version).o1.c main  > /dev/null
-	gsc -obj -cc-options "-D___DYNAMIC" libbug.$(version).o1.c main.c
-	$(CC) -shared  libbug.$(version).o1.o main.o -o libbug.$(version).o1
-	# for reasons I don't yet understand, leaving main.[co] around causes
-	# problems in subsequent makes
-	rm main.c main.o
+hgp: hgp-engine.c
+# need to use a relative path for libbug.c, not absolute
+	gsc -link -l @LIBBUG_INCLUDE_DIR@libbug hgp-engine
+	gsc -obj hgp-engine.c hgp-engine_.c
+	$(CC) -L@LIBBUG_LIB_DIR@ -o hgp hgp-engine.o hgp-engine_.o  -lgambc -lm -ldl -lutil -lbug
 
 
 install:
-	install -d $(DESTDIR)$(libdir)
-	install -m 0755 libbug.so.$(version) $(DESTDIR)$(libdir)
-	install -m 0755 libbug.$(version).o1 $(DESTDIR)$(libdir)
-	install -d $(DESTDIR)$(includedir)/$(package)/
-	install -m 0755 libbug#.scm $(DESTDIR)$(includedir)/$(package)/
-	install -m 0755 libbug-macros.scm $(DESTDIR)$(includedir)/$(package)/
+	install -d $(DESTDIR)$(bindir)
+	install -m 0755 hgp $(DESTDIR)$(bindir)
 
 
 uninstall:
-	-rm $(DESTDIR)$(libdir)/libbug.so.$(version)
-	-rm $(DESTDIR)$(libdir)/libbug.$(version).o1
-	-rm $(DESTDIR)$(includedir)/$(package)/libbug#.scm
-	-rm $(DESTDIR)$(includedir)/$(package)/libbug-macros.scm
+	rm $(DESTDIR)$(bindir)/hgp
 
 Makefile: Makefile.in ../config.status
 	cd .. && ./config.status $@
