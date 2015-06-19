@@ -1,0 +1,77 @@
+# @configure_input@
+
+package = @PACKAGE_NAME@
+version = @PACKAGE_VERSION@
+tarname = @PACKAGE_TARNAME@
+distdir = $(tarname)-$(version)
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+mandir = @mandir@
+datarootdir = @datarootdir@
+
+all: 
+	cd bug-gsc/ && $(MAKE) $@
+	cd src && $(MAKE) $@
+	bzip2 -f -k man/bug-gscpp.1
+	bzip2 -f -k man/bug-gsi.1
+
+install:
+	cd bug-gsc/ && $(MAKE) $@
+	cd src && $(MAKE) $@
+	install -d $(DESTDIR)$(mandir)/man1
+	install -m 0755 man/bug-gscpp.1.bz2  $(DESTDIR)$(mandir)/man1/
+	install -m 0755 man/bug-gsi.1.bz2  $(DESTDIR)$(mandir)/man1/
+
+uninstall:
+	-cd bug-gsc/ && $(MAKE) $@
+	-cd src && $(MAKE) $@
+	-rm $(DESTDIR)$(mandir)/man1/bug-gscpp.1.bz2
+	-rm $(DESTDIR)$(mandir)/man1/bug-gsi.1.bz2
+
+dist: $(distdir).tar.gz
+
+$(distdir).tar.gz : $(distdir)
+	tar chof - $(distdir) | gzip -9 -c > $@
+	rm -rf $(distdir)
+
+$(distdir): FORCE
+	mkdir $(distdir)
+	cd $(distdir) ; \
+	git clone ../../bug . ; \
+	rm -rf .git* ; \
+	cp ../configure.ac . ; \
+	cp ../configure . 
+
+distcheck: $(distdir).tar.gz
+	gzip -cd $(distdir).tar.gz | tar xvf -
+	cd $(distdir) && ./configure
+	cd $(distdir) && $(MAKE)
+	cd $(distdir) && $(MAKE) DESTDIR=$${PWD}/_inst install
+	cd $(distdir) && $(MAKE) DESTDIR=$${PWD}/_inst uninstall
+	@remaining="`find $${PWD}/$(distdir)/_inst -type f | wc -l`"; \
+	if test "$${remaining}" -ne 0; then \
+	  echo "*** $${remaining} file(s) remaining in stage directory!"; \
+	exit 1; \
+	fi	
+	cd $(distdir) && $(MAKE) clean
+	rm -rf $(distdir)
+	@echo "*** Package $(distdir).tar.gz is ready for distribution"
+
+Makefile: Makefile.in config.status
+	./config.status $@
+
+config.status: configure
+	./config.status --recheck
+
+
+FORCE:
+	-rm -rf $(distdir).tar.gz >/dev/null 2>&1
+	-rm -rf $(distdir) >/dev/null 2>&1
+
+clean:
+	git clean -f
+
+
+.PHONY: FORCE all clean install uninstall
