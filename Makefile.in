@@ -29,7 +29,7 @@ $(distdir).tar.gz : $(distdir)
 $(distdir): FORCE
 	mkdir $(distdir)
 	cd $(distdir) ; \
-	git clone ../../bug . ; \
+	git clone ../../hgp-engine/ . ; \
 	rm -rf .git* ; \
 	cp ../configure.ac . ; \
 	cp ../configure . 
